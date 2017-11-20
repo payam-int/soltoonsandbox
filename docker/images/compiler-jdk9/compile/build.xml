@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<project name="Compile-Java-Source" default="main" basedir=".">
+    <!-- Sets variables which can later be used. -->
+    <!-- The value of a property is accessed via ${} -->
+    <property name="src.dir" location="/code/src"/>
+    <property name="dist.dir" location="/code/dist"/>
+
+    <!-- Deletes the existing build, docs and dist directory-->
+    <target name="clean">
+        <delete dir="${dist.dir}"/>
+    </target>
+
+    <!-- Creates the  build, docs and dist directory-->
+    <target name="makedir">
+        <mkdir dir="${dist.dir}"/>
+    </target>
+
+    <target name="compile" depends="clean, makedir">
+        <javac srcdir="${src.dir}" destdir="${dist.dir}">
+        </javac>
+    </target>
+
+    <target name="main" depends="compile">
+        <description>Main target</description>
+    </target>
+</project>
