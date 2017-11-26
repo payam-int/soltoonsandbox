@@ -1,20 +1,32 @@
 package ir.pint.soltoon;
 
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.model.Bind;
-import com.github.dockerjava.api.model.Info;
-import com.github.dockerjava.api.model.Link;
-import com.github.dockerjava.api.model.Volume;
-import com.github.dockerjava.core.DefaultDockerClientConfig;
-import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
-import org.apache.log4j.BasicConfigurator;
-import org.slf4j.LoggerFactory;
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerCertificateException;
+import ir.pint.soltoon.services.docker.DockerService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ResourceBanner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScans;
+import org.springframework.core.io.FileSystemResource;
 
+import javax.annotation.PostConstruct;
 
+@SpringBootApplication
+@EnableAutoConfiguration
+@ComponentScan
 public class SoltoonServer {
-    public static void main(String[] args) {
 
+    @Autowired
+    DockerService dockerService;
+
+    public static void main(String[] args) throws DockerCertificateException {
+        SpringApplication app = new SpringApplication(SoltoonServer.class);
+        app.setBanner(new ResourceBanner(new FileSystemResource("src/main/resources/ir/pint/soltoon/banner.txt")));
+        app.run(args);
     }
 }

@@ -1,0 +1,3 @@
+docker:
+  uri: "unix:///var/run/docker.sock"
+  network: "soltoonsandbox"

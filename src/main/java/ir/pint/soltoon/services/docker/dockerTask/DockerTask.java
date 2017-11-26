@@ -1,37 +1,34 @@
-package ir.pint.soltoon.services.docker;
+package ir.pint.soltoon.services.docker.dockerTask;
 
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.exception.BadRequestException;
-import com.github.dockerjava.api.exception.ConflictException;
-import com.github.dockerjava.api.exception.NotFoundException;
-import com.github.dockerjava.api.model.Bind;
-import com.github.dockerjava.api.model.Link;
+import com.spotify.docker.client.DockerClient;
+
+import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.print.Doc;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
-// @todo change cpu period to CPUlimit
+// @todo add link
 public class DockerTask {
 
     private static Logger logger = LoggerFactory.getLogger(DockerTask.class.getName());
-
     private static AtomicLong DOCKER_TASK_ID = new AtomicLong(1000000);
 
     private long startTime;
     private String imageName;
     private String containerName;
-    private DockerTaskLimits taskLimits;
+    private DockerTaskLimit taskLimits;
     private Map<String, String> environmentVariables = new Hashtable<>();
-    private List<Link> linksList = new ArrayList<>();
-    private List<Bind> bindList = new ArrayList<>();
+    private List<DockerLink> linksList = new ArrayList<>();
+    private List<DockerBind> bindList = new ArrayList<>();
     private String containerId;
+    private String networkId;
     private DockerTask runWithTask = null;
     private ConcurrentLinkedQueue<DockerTaskEventListener> eventListeners = new ConcurrentLinkedQueue<>();
     private boolean timedOut = false;
@@ -40,7 +37,7 @@ public class DockerTask {
         this.containerName = "SS_" + DOCKER_TASK_ID.getAndIncrement();
     }
 
-    public DockerTask(String imageName, DockerTaskLimits taskLimits) {
+    public DockerTask(String imageName, DockerTaskLimit taskLimits) {
         this();
         this.imageName = imageName;
         this.taskLimits = taskLimits;
@@ -49,7 +46,7 @@ public class DockerTask {
     public DockerTask(String imageName) {
         this();
         this.imageName = imageName;
-        this.taskLimits = new DockerTaskLimits();
+        this.taskLimits = new DockerTaskLimit();
     }
 
     public static void chainTasks(DockerTask... tasks) {
@@ -83,11 +80,11 @@ public class DockerTask {
         this.imageName = imageName;
     }
 
-    public DockerTaskLimits getTaskLimits() {
+    public DockerTaskLimit getTaskLimits() {
         return taskLimits;
     }
 
-    public void setTaskLimits(DockerTaskLimits taskLimits) {
+    public void setTaskLimits(DockerTaskLimit taskLimits) {
         this.taskLimits = taskLimits;
     }
 
@@ -107,27 +104,27 @@ public class DockerTask {
         this.environmentVariables = environmentVariables;
     }
 
-    public List<Link> getLinksList() {
+    public List<DockerLink> getLinksList() {
         return linksList;
     }
 
-    public void setLinksList(List<Link> linksList) {
+    public void setLinksList(List<DockerLink> linksList) {
         this.linksList = linksList;
     }
 
-    public void addLink(Link link) {
+    public void addLink(DockerLink link) {
         getLinksList().add(link);
     }
 
-    public List<Bind> getBindList() {
+    public List<DockerBind> getBindList() {
         return bindList;
     }
 
-    public void setBindList(List<Bind> bindList) {
+    public void setBindList(List<DockerBind> bindList) {
         this.bindList = bindList;
     }
 
-    public void addBind(Bind bind) {
+    public void addBind(DockerBind bind) {
         getBindList().add(bind);
     }
 
@@ -171,34 +168,61 @@ public class DockerTask {
 
         removeContainer(dockerClient);
 
-        CreateContainerCmd containerCmd = dockerClient.createContainerCmd(imageName)
-                .withName(containerName);
 
-        if (linksList.size() > 0)
-            containerCmd = containerCmd.withLinks(linksList);
+        HostConfig.Builder hostConfigBuilder = HostConfig.builder();
+
+        for (DockerBind bind : bindList)
+            hostConfigBuilder = hostConfigBuilder.appendBinds(bind.toBindString());
+
+
+        if (taskLimits.getMemoryLimit() > 0)
+            hostConfigBuilder = hostConfigBuilder.memory(taskLimits.getMemoryLimit()).memorySwap(taskLimits.getMemoryLimit());
+
+        if (taskLimits.getCpuLimit() > 0)
+            hostConfigBuilder = hostConfigBuilder.cpuQuota((long) (100000 * taskLimits.getCpuLimit()));
+
+        HostConfig hostConfig = hostConfigBuilder.networkMode(networkId).build();
+
+//
+//        ContainerConfig.NetworkingConfig.create(endpointConfigHashtable)
+
+
+
+        final ContainerConfig containerConfig = ContainerConfig.builder()
+                .env(getEnvList())
+                .hostConfig(hostConfig)
+                .image(imageName)
+                .hostname(containerName)
+                .build();
+
+        ContainerCreation container;
+        try {
+            container = dockerClient.createContainer(containerConfig, containerName);
+            this.containerId = container.id();
+            dockerClient.startContainer(containerId);
+        } catch (DockerException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+//        if (linksList.size() > 0)
+//            containerCmd = containerCmd.withLinks(linksList);
 
 
 //        containerCmd = containerCmd.withCpu("0-1s");
 
-        if (taskLimits.getMemoryLimit() > 0)
-            containerCmd = containerCmd.withMemory(taskLimits.getMemoryLimit()).withMemorySwap(taskLimits.getMemoryLimit());
+//        CreateContainerResponse exec;
+//        try {
+//            exec = containerCmd.exec();
+//        } catch (BadRequestException e) {
+//            removeContainer(dockerClient);
+//            exec = containerCmd.exec();
+//        }
 
-        if (bindList.size() > 0)
-            containerCmd = containerCmd.withBinds(bindList);
 
-        if (environmentVariables.size() > 0)
-            containerCmd = containerCmd.withEnv(getEnvList());
-
-        CreateContainerResponse exec;
-        try {
-            exec = containerCmd.exec();
-        } catch (BadRequestException e) {
-            removeContainer(dockerClient);
-            exec = containerCmd.exec();
-        }
-
-        this.containerId = exec.getId();
-        dockerClient.startContainerCmd(containerId).exec();
+//        dockerClient.startContainerCmd(containerId).exec();
     }
 
     private void removeContainer(DockerClient dockerClient) {
@@ -207,16 +231,12 @@ public class DockerTask {
 
     private void removeContainer(DockerClient dockerClient, boolean tried) {
         try {
-            dockerClient.removeContainerCmd(containerName).exec();
-        } catch (NotFoundException e) {
-
-        } catch (ConflictException e) {
+            dockerClient.removeContainer(containerName);
+        } catch (Exception e) {
             if (!tried) {
                 destroy(dockerClient);
                 removeContainer(dockerClient, true);
             }
-        } catch (Exception e) {
-            // ignore
         }
     }
 
@@ -233,7 +253,13 @@ public class DockerTask {
     }
 
     public void destroy(DockerClient dockerClient) {
-        dockerClient.killContainerCmd(containerId != null ? containerId : containerName).exec();
+        try {
+            dockerClient.killContainer(containerId != null ? containerId : containerName);
+        } catch (DockerException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -246,16 +272,32 @@ public class DockerTask {
     }
 
     public boolean isAlive(DockerClient dockerClient) {
-        InspectContainerResponse inspectContainerResponse = dockerClient.inspectContainerCmd(containerId).exec();
-        return inspectContainerResponse.getState().getRunning();
+        try {
+            ContainerInfo containerInfo = dockerClient.inspectContainer(containerName);
+            return containerInfo.state().running();
+        } catch (DockerException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
-    public InspectContainerResponse getInspect(DockerClient dockerClient) {
+    public ContainerInfo getInspect(DockerClient dockerClient) {
         if (containerId == null)
             return null;
+        try {
+            return dockerClient.inspectContainer(containerName);
+        } catch (DockerException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-        InspectContainerResponse exec = dockerClient.inspectContainerCmd(containerId).exec();
-        return exec;
+    private void connectTo(DockerTask task, String taskDns, String secondTaskDns) {
+
     }
 
 

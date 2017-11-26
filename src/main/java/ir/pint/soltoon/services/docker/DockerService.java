@@ -1,6 +1,9 @@
 package ir.pint.soltoon.services.docker;
 
-import com.github.dockerjava.api.DockerClient;
+
+import com.spotify.docker.client.DockerClient;
+import ir.pint.soltoon.services.docker.dockerTask.DockerTask;
+
 
 public interface DockerService {
     DockerClient getDockerClient();

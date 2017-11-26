@@ -1,5 +1,7 @@
 package ir.pint.soltoon.services.docker;
 
+import ir.pint.soltoon.services.docker.dockerTask.DockerTask;
+import ir.pint.soltoon.services.docker.dockerTask.DockerTaskEventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,8 +10,8 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-public class DockerScheduling extends Thread {
-    private static Logger logger = LoggerFactory.getLogger(DockerScheduling.class.getName());
+public class DockerContainerPool extends Thread {
+    private static Logger logger = LoggerFactory.getLogger(DockerContainerPool.class.getName());
 
     private DockerService dockerService;
     private ConcurrentLinkedQueue<DockerTask> waitingTasks = new ConcurrentLinkedQueue<>();
@@ -23,12 +25,12 @@ public class DockerScheduling extends Thread {
         }
     });
 
-    public DockerScheduling(DockerService dockerService) {
+    public DockerContainerPool(DockerService dockerService) {
         setName("Docker Scheduling");
         this.dockerService = dockerService;
     }
 
-    public DockerScheduling(DockerService dockerService, int taskLimit) {
+    public DockerContainerPool(DockerService dockerService, int taskLimit) {
         this(dockerService);
         this.taskLimit = taskLimit;
     }
@@ -39,7 +41,7 @@ public class DockerScheduling extends Thread {
 
     @Override
     public void run() {
-        logger.debug("DockerScheduling is running.");
+        logger.debug("DockerContainerPool is running.");
 
         while (true) {
             try {
@@ -62,7 +64,7 @@ public class DockerScheduling extends Thread {
         if (newTask == null)
             return;
 
-        logger.debug("DockerScheduling can run new task group.");
+        logger.debug("DockerContainerPool can run new task group.");
         for (DockerTask task = newTask; task != null; task = task.getRunWithTask()) {
             task.start(dockerService.getDockerClient());
             task.fireEvent(DockerTaskEventType.STARTED, task);

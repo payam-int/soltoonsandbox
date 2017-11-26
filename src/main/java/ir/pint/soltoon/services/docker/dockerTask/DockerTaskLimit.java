@@ -1,14 +1,14 @@
-package ir.pint.soltoon.services.docker;
+package ir.pint.soltoon.services.docker.dockerTask;
 
-public class DockerTaskLimits {
+public class DockerTaskLimit {
     private long memoryLimit;
     private double cpuLimit;
     private double timeout;
 
-    public DockerTaskLimits() {
+    public DockerTaskLimit() {
     }
 
-    public DockerTaskLimits(long memoryLimit, double cpuLimit, double timeout) {
+    public DockerTaskLimit(long memoryLimit, double cpuLimit, double timeout) {
         this.memoryLimit = memoryLimit;
         this.cpuLimit = cpuLimit;
         this.timeout = timeout;
