@@ -58,12 +58,12 @@ public class DockerService implements Docker {
 
     private void removeSoltoonContainers() {
         try {
-            List<Container> containers = dockerClient.listContainers(DockerClient.ListContainersParam.withLabel(dockerConfig.getDefaultLabel()));
+            List<Container> containers = dockerClient.listContainers(DockerClient.ListContainersParam.allContainers(), DockerClient.ListContainersParam.withLabel(dockerConfig.getDefaultLabel()));
 
             if (containers.size() > 0)
                 logger.info(String.format("There is %d containers tagged with name %s.", containers.size(), dockerConfig.getDefaultLabel()));
             else
-                logger.info(String.format("There is no container tagged with name %s.", containers.size(), dockerConfig.getDefaultLabel()));
+                logger.info(String.format("There is no container tagged with name %s.", dockerConfig.getDefaultLabel()));
 
             for (Container container : containers)
                 try {
@@ -93,11 +93,12 @@ public class DockerService implements Docker {
 
             c.setContainerApi(manager);
         }
-        return false;
+        return true;
     }
 
     @Override
     public boolean runContainerGroup(DockerContainerGroup containerGroup) {
+
         return false;
     }
 

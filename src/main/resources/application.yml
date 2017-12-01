@@ -12,6 +12,13 @@ docker:
         memory: 1000 #kb
         memorySwap: 1000 #kb
         timeout: 100 #miliseconds
+    - name: "test-longruntime"
+      image: "test-longruntime:latest"
+      resourceLimits:
+        cpu: 1000 #100000 per cpu
+        memory: 100000000 #kb
+        swap-memory: 100000000 #kb
+        timeout: 1000 #miliseconds
   resources:
     cpu: 100000
     memory: 100000

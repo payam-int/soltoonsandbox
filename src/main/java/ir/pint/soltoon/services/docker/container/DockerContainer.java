@@ -4,19 +4,25 @@ import ir.pint.soltoon.services.docker.DockerStorage;
 import ir.pint.soltoon.services.docker.api.DockerContainerApi;
 import ir.pint.soltoon.services.docker.api.DockerContainerManager;
 import ir.pint.soltoon.services.docker.network.DockerContainerNetwork;
+import ir.pint.soltoon.services.docker.network.DockerContainerNullNetwork;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
+@Component
+@Scope("prototype")
 public class DockerContainer implements DockerContainerGroup {
     private DockerContainerApi containerApi;
     private DockerContainerInfo containerInfo;
     private DockerContainerConfig dockerContainerConfig;
-    private DockerContainerNetwork dockerContainerNetwork;
+    private DockerContainerNetwork dockerContainerNetwork = new DockerContainerNullNetwork();
 
     private DockerStorage[] storages;
     private String[] network;
@@ -26,6 +32,11 @@ public class DockerContainer implements DockerContainerGroup {
     private Instant maxLife = Instant.now().plusSeconds(24 * 3600);
     private String id;
     private String name = null;
+
+    public DockerContainer() {
+    }
+
+    private Map<String, String> labels = new Hashtable<>();
 
     public Instant getMaxLife() {
         return maxLife;
@@ -57,6 +68,9 @@ public class DockerContainer implements DockerContainerGroup {
     }
 
     public DockerContainerInfo getContainerInfo() {
+        if (containerInfo == null)
+            containerInfo = new DockerContainerInfo();
+
         return containerInfo;
     }
 
@@ -131,5 +145,13 @@ public class DockerContainer implements DockerContainerGroup {
     @Override
     public void remove() {
         dockerContainerNetwork.unuse();
+    }
+
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
     }
 }

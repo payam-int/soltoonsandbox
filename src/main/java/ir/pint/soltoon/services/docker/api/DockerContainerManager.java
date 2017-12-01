@@ -6,12 +6,16 @@ import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
 import com.spotify.docker.client.messages.HostConfig;
+import ir.pint.soltoon.services.docker.DockerConfig;
 import ir.pint.soltoon.services.docker.container.DockerContainer;
 import ir.pint.soltoon.services.docker.container.DockerContainerConfig;
 import ir.pint.soltoon.services.logger.ExternalExceptionLogger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+
+import java.time.Instant;
 
 
 /**
@@ -59,7 +63,8 @@ public class DockerContainerManager implements DockerContainerApi {
         try {
             dockerClient.startContainer(getContainer().getId());
             container.getContainerInfo().setStarted(true);
-            container.getContainerInfo().setStartTime(System.currentTimeMillis());
+            container.getContainerInfo().setStartTime(Instant.now());
+
             return true;
         } catch (DockerException e) {
             e.printStackTrace();
@@ -87,7 +92,7 @@ public class DockerContainerManager implements DockerContainerApi {
     @Override
     public void removeContainer() {
         try {
-            dockerClient.removeContainer(getContainer().getId());
+            dockerClient.removeContainer(getContainer().getId(), DockerClient.RemoveContainerParam.forceKill());
         } catch (DockerException e) {
             e.printStackTrace();
             exceptionLogger.log(e);
@@ -107,13 +112,16 @@ public class DockerContainerManager implements DockerContainerApi {
         if (getContainer().getName() != null)
             builder.hostname(getContainer().getName());
 
-        builder = builder.hostConfig(getHostConfig());
+        builder = builder.hostConfig(getHostConfig()).image(getContainer().getDockerContainerConfig().getImage());
+
+        builder.labels(getContainer().getLabels());
 
         ContainerConfig containerConfig = builder.build();
 
         try {
             ContainerCreation container = dockerClient.createContainer(containerConfig);
             getContainer().setId(container.id());
+            getContainer().getContainerInfo().setCreated(true);
 
             return true;
         } catch (DockerException e) {
@@ -153,6 +161,7 @@ public class DockerContainerManager implements DockerContainerApi {
             if (containerInfo.state().status().equals("exited")) {
                 container.getContainerInfo().setExited(true);
                 container.getContainerInfo().setExitCode(containerInfo.state().exitCode());
+                container.getContainerInfo().setExitTime(Instant.now());
             }
         } catch (DockerException e) {
             e.printStackTrace();

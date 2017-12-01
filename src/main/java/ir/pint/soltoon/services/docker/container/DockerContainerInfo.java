@@ -1,10 +1,13 @@
 package ir.pint.soltoon.services.docker.container;
 
+import java.time.Instant;
+
 public class DockerContainerInfo {
     private boolean created = false;
     private boolean started = false;
     private boolean exited = false;
-    private long startTime = -1;
+    private Instant startTime = null;
+    private Instant exitTime = null;
     private int exitCode;
 
 
@@ -27,12 +30,20 @@ public class DockerContainerInfo {
         this.exited = exited;
     }
 
-    public long getStartTime() {
+    public Instant getStartTime() {
         return startTime;
     }
 
-    public void setStartTime(long startTime) {
+    public void setStartTime(Instant startTime) {
         this.startTime = startTime;
+    }
+
+    public Instant getExitTime() {
+        return exitTime;
+    }
+
+    public void setExitTime(Instant exitTime) {
+        this.exitTime = exitTime;
     }
 
     public int getExitCode() {
