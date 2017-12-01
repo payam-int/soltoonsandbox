@@ -6,16 +6,18 @@ import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
 import com.spotify.docker.client.messages.HostConfig;
-import ir.pint.soltoon.services.docker.DockerConfig;
 import ir.pint.soltoon.services.docker.container.DockerContainer;
 import ir.pint.soltoon.services.docker.container.DockerContainerConfig;
 import ir.pint.soltoon.services.logger.ExternalExceptionLogger;
+import ir.pint.soltoon.services.scheduler.ScheduledJob;
+import ir.pint.soltoon.services.scheduler.ShortTimeScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 
 /**
@@ -24,21 +26,25 @@ import java.time.Instant;
 
 @Component
 @Scope("prototype")
-public class DockerContainerManager implements DockerContainerApi {
+public class DockerContainerManager implements DockerContainerManagerInterface, ScheduledJob {
+
     private DockerContainer container;
+
+    /**
+     * Api object for docker
+     */
     private DockerClient dockerClient;
 
+    private final ExternalExceptionLogger exceptionLogger;
+
+    private final ShortTimeScheduler shortTimeScheduler;
+
     @Autowired
-    private ExternalExceptionLogger exceptionLogger;
-
-    public DockerContainerManager() {
-
+    public DockerContainerManager(ExternalExceptionLogger exceptionLogger, ShortTimeScheduler shortTimeScheduler) {
+        this.exceptionLogger = exceptionLogger;
+        this.shortTimeScheduler = shortTimeScheduler;
     }
 
-    public DockerContainerManager(DockerContainer container, DockerClient dockerClient) {
-        this.container = container;
-        this.dockerClient = dockerClient;
-    }
 
     @Override
     public DockerContainer getContainer() {
@@ -77,6 +83,7 @@ public class DockerContainerManager implements DockerContainerApi {
 
     @Override
     public boolean terminateContainer() {
+        container.unuseNetwork();
         try {
             dockerClient.killContainer(getContainer().getId());
             return true;
@@ -91,6 +98,7 @@ public class DockerContainerManager implements DockerContainerApi {
 
     @Override
     public void removeContainer() {
+        container.unuseNetwork();
         try {
             dockerClient.removeContainer(getContainer().getId(), DockerClient.RemoveContainerParam.forceKill());
         } catch (DockerException e) {
@@ -168,6 +176,45 @@ public class DockerContainerManager implements DockerContainerApi {
             exceptionLogger.log(e);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    @PostConstruct
+    private void init() {
+        shortTimeScheduler.addJob(this);
+    }
+
+    @Override
+    public boolean isReady() {
+        return isTimedout();
+    }
+
+    @Override
+    public boolean runJob() {
+        terminateIfTimedout();
+        return true;
+    }
+
+    /**
+     * Check if container is timed out.
+     *
+     * @return true if it is timed out.
+     */
+    private boolean isTimedout() {
+        return getContainer().getContainerInfo().getStartTime()
+                .plus(getContainer().getDockerContainerConfig().getResourceLimits().getTimeout(), ChronoUnit.MILLIS)
+                .isBefore(Instant.now());
+    }
+
+
+    /**
+     * Terminates container if it is not exited normally.
+     */
+    private void terminateIfTimedout() {
+        refreshInformation();
+        if (!getContainer().getContainerInfo().isExited()) {
+            terminateContainer();
+            refreshInformation();
         }
     }
 }

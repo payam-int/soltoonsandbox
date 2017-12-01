@@ -11,13 +11,16 @@ public class DockerContainerList implements DockerContainerGroup {
         return (DockerContainer[]) containers.toArray(new DockerContainer[containers.size()]);
     }
 
-    public void addContainer(DockerContainer container){
+    public void addContainer(DockerContainer container) {
         containers.add(container);
     }
 
     @Override
-    public void remove() {
-        for (DockerContainer c: containers)
-            c.remove();
+    public boolean remove() {
+        boolean r = true;
+        for (DockerContainer c : containers)
+            r &= c.remove();
+
+        return r;
     }
 }

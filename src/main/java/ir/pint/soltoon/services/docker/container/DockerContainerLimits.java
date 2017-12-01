@@ -1,6 +1,8 @@
 package ir.pint.soltoon.services.docker.container;
 
 public class DockerContainerLimits {
+    public static final DockerContainerLimits NO_LIMITS = new DockerContainerLimits(-1, -1, -1, -1);
+
     private long cpu = -1;
     private long memory = -1;
     private long swapMemory = -1;

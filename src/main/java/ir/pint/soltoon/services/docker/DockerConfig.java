@@ -17,6 +17,8 @@ public class DockerConfig {
     private String defaultLabel;
     private String prefix;
     private List<DockerContainerConfig> containers = new ArrayList<>();
+    private DockerResources resources;
+
 
     private Map<String, DockerContainerConfig> containerConfigMap = new Hashtable<>();
 
@@ -60,5 +62,21 @@ public class DockerConfig {
 
     public DockerContainerConfig getContainerConfig(String name) {
         return containerConfigMap.getOrDefault(name, new DockerContainerConfig());
+    }
+
+    public DockerResources getResources() {
+        return resources;
+    }
+
+    public void setResources(DockerResources resources) {
+        this.resources = resources;
+    }
+
+    public Map<String, DockerContainerConfig> getContainerConfigMap() {
+        return containerConfigMap;
+    }
+
+    public void setContainerConfigMap(Map<String, DockerContainerConfig> containerConfigMap) {
+        this.containerConfigMap = containerConfigMap;
     }
 }

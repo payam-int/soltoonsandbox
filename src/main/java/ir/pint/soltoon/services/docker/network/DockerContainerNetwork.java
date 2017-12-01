@@ -2,54 +2,16 @@ package ir.pint.soltoon.services.docker.network;
 
 import com.spotify.docker.client.DockerClient;
 
-public class DockerContainerNetwork {
-    private String name;
-    private int usages = -1;
-    private DockerClient dockerClient;
+public interface DockerContainerNetwork {
+    DockerClient getDockerClient();
 
-    public DockerContainerNetwork() {
-    }
+    void setDockerClient(DockerClient dockerClient);
 
-    public DockerContainerNetwork(String name) {
-        this.name = name;
-    }
+    String getName();
 
-    public DockerClient getDockerClient() {
-        return dockerClient;
-    }
+    void setName(String name);
 
-    public void setDockerClient(DockerClient dockerClient) {
-        this.dockerClient = dockerClient;
-    }
+    void unuse();
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void unuse() {
-        if (usages > 0)
-            usages--;
-
-        if (usages == 0)
-            removeNetwork();
-    }
-
-    private void removeNetwork() {
-
-        usages--;
-    }
-
-    public void use() {
-        if (usages == -1) createNetwork();
-
-        if (usages > -1) usages++;
-    }
-
-    private void createNetwork() {
-        usages++;
-    }
+    void use();
 }

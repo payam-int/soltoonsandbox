@@ -11,9 +11,9 @@ public class DockerContainerConfig {
     private String name;
     private String image;
 
-    private List<String> environmentVariables;
+    private List<String> environmentVariables = new ArrayList<>();
 
-    private DockerContainerLimits resourceLimits;
+    private DockerContainerLimits resourceLimits = DockerContainerLimits.NO_LIMITS;
 
     public DockerContainerConfig() {
     }

@@ -3,7 +3,8 @@ docker:
   defaultLabel: soltoonsandbox
   prefix: soltoonsandbox
   containers:
-    - name: "compiler-jdk9"
+    - container:
+      name: "compiler-jdk9"
       image: "compiler-jdk9:latest"
       environmentVariables:
         - nothing
@@ -12,7 +13,9 @@ docker:
         memory: 1000 #kb
         memorySwap: 1000 #kb
         timeout: 100 #miliseconds
-    - name: "test-longruntime"
+
+    - container:
+      name: "test-longruntime"
       image: "test-longruntime:latest"
       resourceLimits:
         cpu: 1000 #100000 per cpu

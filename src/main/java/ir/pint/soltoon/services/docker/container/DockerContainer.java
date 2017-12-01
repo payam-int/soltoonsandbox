@@ -1,55 +1,67 @@
 package ir.pint.soltoon.services.docker.container;
 
+import ir.pint.soltoon.services.docker.DockerNamingService;
 import ir.pint.soltoon.services.docker.DockerStorage;
-import ir.pint.soltoon.services.docker.api.DockerContainerApi;
+import ir.pint.soltoon.services.docker.api.DockerContainerManagerInterface;
 import ir.pint.soltoon.services.docker.api.DockerContainerManager;
 import ir.pint.soltoon.services.docker.network.DockerContainerNetwork;
-import ir.pint.soltoon.services.docker.network.DockerContainerNullNetwork;
+import ir.pint.soltoon.services.docker.network.DockerContainerNoneNetwork;
+import ir.pint.soltoon.services.scheduler.DefaultLongTimeScheduler;
+import ir.pint.soltoon.services.scheduler.LongTimeScheduler;
+import ir.pint.soltoon.services.scheduler.TimeManagedObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
 
 @Component
 @Scope("prototype")
-public class DockerContainer implements DockerContainerGroup {
-    private DockerContainerApi containerApi;
+public class DockerContainer implements DockerContainerGroup, TimeManagedObject {
+    private DockerContainerManagerInterface containerApi;
     private DockerContainerInfo containerInfo;
     private DockerContainerConfig dockerContainerConfig;
-    private DockerContainerNetwork dockerContainerNetwork = new DockerContainerNullNetwork();
+    private DockerContainerNetwork dockerContainerNetwork = new DockerContainerNoneNetwork();
 
     private DockerStorage[] storages;
     private String[] network;
     private ArrayList<String> environmentVariables;
 
 
-    private Instant maxLife = Instant.now().plusSeconds(24 * 3600);
+    private Instant objectDie = Instant.now().plus(DefaultLongTimeScheduler.defaultLifetime);
     private String id;
     private String name = null;
 
-    public DockerContainer() {
+    private final DockerNamingService namingService;
+
+    private final ApplicationContext context;
+
+    @Autowired
+    public DockerContainer(DockerNamingService namingService, ApplicationContext context) {
+        this.namingService = namingService;
+        this.context = context;
+    }
+
+
+    @PostConstruct
+    private void init() {
+        this.name = namingService.getContainerName();
+        watch();
     }
 
     private Map<String, String> labels = new Hashtable<>();
 
-    public Instant getMaxLife() {
-        return maxLife;
-    }
 
     @Override
     public DockerContainer[] getContainers() {
         return new DockerContainer[]{this};
     }
 
-    public void setMaxLife(Instant maxLife) {
-        this.maxLife = maxLife;
-    }
 
     public String getId() {
         return id;
@@ -59,7 +71,7 @@ public class DockerContainer implements DockerContainerGroup {
         this.id = id;
     }
 
-    public DockerContainerApi getContainerApi() {
+    public DockerContainerManagerInterface getContainerApi() {
         return containerApi;
     }
 
@@ -106,7 +118,7 @@ public class DockerContainer implements DockerContainerGroup {
         this.name = name;
     }
 
-    public void setContainerApi(DockerContainerApi containerApi) {
+    public void setContainerApi(DockerContainerManagerInterface containerApi) {
         this.containerApi = containerApi;
     }
 
@@ -142,9 +154,27 @@ public class DockerContainer implements DockerContainerGroup {
         this.environmentVariables.add(String.format("%s:%s", name, variable));
     }
 
+
     @Override
-    public void remove() {
-        dockerContainerNetwork.unuse();
+    public void watch() {
+        context.getBean(LongTimeScheduler.class).addJob(this);
+    }
+
+    @Override
+    public boolean isDead() {
+        return false;
+    }
+
+    @Override
+    public boolean remove() {
+        containerApi.removeContainer();
+        return true;
+    }
+
+
+    @Override
+    public long getScheduledTime() {
+        return objectDie.toEpochMilli();
     }
 
     public Map<String, String> getLabels() {
@@ -153,5 +183,12 @@ public class DockerContainer implements DockerContainerGroup {
 
     public void setLabels(Map<String, String> labels) {
         this.labels = labels;
+    }
+
+    public void unuseNetwork() {
+        if (dockerContainerNetwork != null) {
+            dockerContainerNetwork.unuse();
+            dockerContainerNetwork = null;
+        }
     }
 }
