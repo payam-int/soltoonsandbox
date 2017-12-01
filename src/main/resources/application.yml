@@ -1,3 +1,24 @@
 docker:
   uri: "unix:///var/run/docker.sock"
-  network: "soltoonsandbox"
+  defaultLabel: soltoonsandbox
+  prefix: soltoonsandbox
+  containers:
+    - name: "compiler-jdk9"
+      image: "compiler-jdk9:latest"
+      environmentVariables:
+        - nothing
+      resourceLimits:
+        cpu: 1000 #100000 per cpu
+        memory: 1000 #kb
+        memorySwap: 1000 #kb
+        timeout: 100 #miliseconds
+  resources:
+    cpu: 100000
+    memory: 100000
+    containers: 10
+    networks: 5
+    container-lifetime: 86400 # seconds
+
+
+bugsnag:
+  apiKey: "211d3337ac1232df46778db557537339"

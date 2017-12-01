@@ -1,5 +1,5 @@
 package ir.pint.soltoon.services.logger;
 
-public interface ExceptionLogger {
+public interface ExternalExceptionLogger {
     void log(Throwable throwable);
 }

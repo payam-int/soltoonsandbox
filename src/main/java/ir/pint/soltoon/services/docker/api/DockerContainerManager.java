@@ -1,20 +1,34 @@
-package ir.pint.soltoon.services.docker;
+package ir.pint.soltoon.services.docker.api;
 
-import com.bugsnag.Report;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
-import ir.pint.soltoon.services.logger.ExceptionLogger;
+import com.spotify.docker.client.messages.HostConfig;
+import ir.pint.soltoon.services.docker.container.DockerContainer;
+import ir.pint.soltoon.services.docker.container.DockerContainerConfig;
+import ir.pint.soltoon.services.logger.ExternalExceptionLogger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
-public class DockerContainerManager {
+
+/**
+ * Manages actions performed on container. Uses spotify/docker-api library.
+ */
+
+@Component
+@Scope("prototype")
+public class DockerContainerManager implements DockerContainerApi {
     private DockerContainer container;
     private DockerClient dockerClient;
 
     @Autowired
-    private ExceptionLogger exceptionLogger;
+    private ExternalExceptionLogger exceptionLogger;
 
     public DockerContainerManager() {
+
     }
 
     public DockerContainerManager(DockerContainer container, DockerClient dockerClient) {
@@ -22,10 +36,12 @@ public class DockerContainerManager {
         this.dockerClient = dockerClient;
     }
 
+    @Override
     public DockerContainer getContainer() {
         return container;
     }
 
+    @Override
     public void setContainer(DockerContainer container) {
         this.container = container;
     }
@@ -38,6 +54,7 @@ public class DockerContainerManager {
         this.dockerClient = dockerClient;
     }
 
+    @Override
     public boolean startContainer() {
         try {
             dockerClient.startContainer(getContainer().getId());
@@ -53,6 +70,7 @@ public class DockerContainerManager {
         return false;
     }
 
+    @Override
     public boolean terminateContainer() {
         try {
             dockerClient.killContainer(getContainer().getId());
@@ -66,6 +84,7 @@ public class DockerContainerManager {
         return false;
     }
 
+    @Override
     public void removeContainer() {
         try {
             dockerClient.removeContainer(getContainer().getId());
@@ -77,11 +96,56 @@ public class DockerContainerManager {
         }
     }
 
+    @Override
     public boolean createContainer() {
+        DockerContainerConfig dockerContainerConfig = getContainer().getDockerContainerConfig();
+
+        ContainerConfig.Builder builder = ContainerConfig.builder();
+
+        builder = builder.env(dockerContainerConfig.getEnvironmentVariables());
+
+        if (getContainer().getName() != null)
+            builder.hostname(getContainer().getName());
+
+        builder = builder.hostConfig(getHostConfig());
+
+        ContainerConfig containerConfig = builder.build();
+
+        try {
+            ContainerCreation container = dockerClient.createContainer(containerConfig);
+            getContainer().setId(container.id());
+
+            return true;
+        } catch (DockerException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         return false;
     }
 
+    private HostConfig getHostConfig() {
+        HostConfig.Builder builder = HostConfig.builder();
+
+        getContainer().getDockerContainerNetwork().use();
+
+        builder = builder.networkMode(getContainer().getDockerContainerNetwork().getName());
+
+        DockerContainerConfig config = getContainer().getDockerContainerConfig();
+        if (config.getResourceLimits().getCpu() != -1)
+            builder = builder.cpuPeriod(10000L).cpuQuota(config.getResourceLimits().getCpu());
+
+        if (config.getResourceLimits().getMemory() != -1)
+            builder = builder.memory(config.getResourceLimits().getMemory());
+
+        if (config.getResourceLimits().getSwapMemory() != -1)
+            builder = builder.memorySwap(config.getResourceLimits().getSwapMemory());
+
+        return builder.build();
+    }
+
+    @Override
     public void refreshInformation() {
         try {
             ContainerInfo containerInfo = dockerClient.inspectContainer(getContainer().getId());

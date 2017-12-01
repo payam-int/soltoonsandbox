@@ -1,12 +1,23 @@
 package ir.pint.soltoon.services.logger;
 
 import com.bugsnag.Bugsnag;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-@Service
-public class BugsnagLogger implements ExceptionLogger {
+import javax.annotation.PostConstruct;
 
-    Bugsnag bugsnag = new Bugsnag("211d3337ac1232df46778db557537339");
+@Service
+public class BugsnagLogger implements ExternalExceptionLogger {
+
+    @Value("${bugsnag.apiKey}")
+    private String apiKey;
+
+    Bugsnag bugsnag;
+
+    @PostConstruct
+    private void init() {
+        bugsnag  = new Bugsnag(apiKey);
+    }
 
 
     @Override
