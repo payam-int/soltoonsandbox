@@ -5,6 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.PostConstruct;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -18,6 +19,8 @@ public class DockerConfig {
     private String prefix;
     private List<DockerContainerConfig> containers = new ArrayList<>();
     private DockerResources resources;
+    private Boolean buildImages;
+    private File imagesDirectory;
 
 
     private Map<String, DockerContainerConfig> containerConfigMap = new Hashtable<>();
@@ -78,5 +81,21 @@ public class DockerConfig {
 
     public void setContainerConfigMap(Map<String, DockerContainerConfig> containerConfigMap) {
         this.containerConfigMap = containerConfigMap;
+    }
+
+    public Boolean getBuildImages() {
+        return buildImages;
+    }
+
+    public void setBuildImages(Boolean buildImages) {
+        this.buildImages = buildImages;
+    }
+
+    public File getImagesDirectory() {
+        return imagesDirectory;
+    }
+
+    public void setImagesDirectory(File imagesDirectory) {
+        this.imagesDirectory = imagesDirectory;
     }
 }

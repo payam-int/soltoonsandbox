@@ -13,6 +13,7 @@ import ir.pint.soltoon.services.scheduler.LongTimeScheduler;
 import ir.pint.soltoon.services.scheduler.TimeManagedObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +23,7 @@ import java.util.Map;
 
 @Component
 @Scope("prototype")
+@Primary
 public class DockerContainerSandboxNetwork implements TimeManagedObject, DockerContainerNetwork {
     private String name;
     private int usages = -1;

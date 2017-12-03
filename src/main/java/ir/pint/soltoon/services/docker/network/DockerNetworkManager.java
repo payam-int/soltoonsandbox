@@ -9,6 +9,7 @@ import ir.pint.soltoon.services.logger.ExternalExceptionLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -27,10 +28,13 @@ public class DockerNetworkManager implements DockerNetwork {
 
     private final DockerConfig dockerConfig;
 
+    private final ApplicationContext context;
+
     @Autowired
-    public DockerNetworkManager(ExternalExceptionLogger externalExceptionLogger, DockerConfig dockerConfig) {
+    public DockerNetworkManager(ExternalExceptionLogger externalExceptionLogger, DockerConfig dockerConfig, ApplicationContext context) {
         this.externalExceptionLogger = externalExceptionLogger;
         this.dockerConfig = dockerConfig;
+        this.context = context;
     }
 
     @Override
@@ -40,6 +44,11 @@ public class DockerNetworkManager implements DockerNetwork {
 
     @Override
     public void init() {
+
+    }
+
+    @Override
+    public void cleanup() {
         try {
             List<Network> networks = dockerClient.listNetworks(DockerClient.ListNetworksParam.withLabel(dockerConfig.getDefaultLabel()));
             if (networks.size() > 0)
@@ -64,5 +73,12 @@ public class DockerNetworkManager implements DockerNetwork {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public DockerContainerNetwork getNetwork() {
+        DockerContainerSandboxNetwork bean = context.getBean(DockerContainerSandboxNetwork.class);
+        bean.setDockerClient(dockerClient);
+        return bean;
     }
 }

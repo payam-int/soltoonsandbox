@@ -39,5 +39,6 @@ public class SoltoonServer {
         SpringApplication app = new SpringApplication(SoltoonServer.class);
         app.setBanner(new ResourceBanner(new FileSystemResource("src/main/resources/ir/pint/soltoon/banner.txt")));
         app.run(args);
+
     }
 }

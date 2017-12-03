@@ -1,7 +1,12 @@
 package ir.pint.soltoon.services.docker.network;
 
 import com.spotify.docker.client.DockerClient;
+import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
+
+@Component
+@Singleton
 public class DockerContainerNoneNetwork implements DockerContainerNetwork {
 
     public DockerContainerNoneNetwork() {

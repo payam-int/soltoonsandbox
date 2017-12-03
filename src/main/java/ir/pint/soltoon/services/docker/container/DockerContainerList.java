@@ -1,7 +1,14 @@
 package ir.pint.soltoon.services.docker.container;
 
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.LinkedBlockingQueue;
+
+@Component
+@Scope("prototype")
 
 public class DockerContainerList implements DockerContainerGroup {
     private LinkedList<DockerContainer> containers = new LinkedList<>();
@@ -15,6 +22,10 @@ public class DockerContainerList implements DockerContainerGroup {
         containers.add(container);
     }
 
+    public void addContainers(DockerContainer[] containers) {
+        this.containers.addAll(Arrays.asList(containers));
+    }
+
     @Override
     public boolean remove() {
         boolean r = true;
@@ -23,4 +34,5 @@ public class DockerContainerList implements DockerContainerGroup {
 
         return r;
     }
+
 }

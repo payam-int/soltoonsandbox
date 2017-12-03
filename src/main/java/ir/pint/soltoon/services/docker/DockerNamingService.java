@@ -10,14 +10,16 @@ public class DockerNamingService {
     private AtomicLong networkId = new AtomicLong(1000000000L);
     private AtomicLong containerId = new AtomicLong(1000000000L);
 
+    private final static String prefix = String.format("%05d", ((int) (Math.random() * 100000)));
+
     @Autowired
     private DockerConfig dockerConfig;
 
     public String getNetworkName() {
-        return String.format("LO%s_%d", dockerConfig.getPrefix(), networkId.getAndIncrement());
+        return String.format("%s_%s_%d", dockerConfig.getPrefix(), prefix, networkId.getAndIncrement());
     }
 
     public String getContainerName() {
-        return String.format("%s_%d", dockerConfig.getPrefix(), containerId.getAndIncrement());
+        return String.format("%s_%s_%d", dockerConfig.getPrefix(), prefix, containerId.getAndIncrement());
     }
 }

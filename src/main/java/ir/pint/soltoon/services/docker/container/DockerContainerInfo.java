@@ -8,7 +8,7 @@ public class DockerContainerInfo {
     private boolean exited = false;
     private Instant startTime = null;
     private Instant exitTime = null;
-    private int exitCode;
+    private int exitCode = -1000000;
 
 
     public DockerContainerInfo() {

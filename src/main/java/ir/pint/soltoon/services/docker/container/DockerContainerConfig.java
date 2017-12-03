@@ -10,6 +10,7 @@ import java.util.List;
 public class DockerContainerConfig {
     private String name;
     private String image;
+    private int update = 1000;
 
     private List<String> environmentVariables = new ArrayList<>();
 
@@ -71,5 +72,13 @@ public class DockerContainerConfig {
             envs = environmentVariables.toString();
 
         return String.format("%s {image: %s, limits: %s, env: %s}", n, i, rl, envs);
+    }
+
+    public int getUpdate() {
+        return update;
+    }
+
+    public void setUpdate(int update) {
+        this.update = update;
     }
 }

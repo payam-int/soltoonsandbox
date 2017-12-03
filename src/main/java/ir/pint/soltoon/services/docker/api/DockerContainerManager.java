@@ -2,22 +2,21 @@ package ir.pint.soltoon.services.docker.api;
 
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.ContainerCreation;
-import com.spotify.docker.client.messages.ContainerInfo;
-import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.*;
 import ir.pint.soltoon.services.docker.container.DockerContainer;
 import ir.pint.soltoon.services.docker.container.DockerContainerConfig;
 import ir.pint.soltoon.services.logger.ExternalExceptionLogger;
-import ir.pint.soltoon.services.scheduler.ScheduledJob;
 import ir.pint.soltoon.services.scheduler.ShortTimeScheduler;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Objects;
+import java.util.logging.Logger;
 
 
 /**
@@ -26,8 +25,9 @@ import java.time.temporal.ChronoUnit;
 
 @Component
 @Scope("prototype")
-public class DockerContainerManager implements DockerContainerManagerInterface, ScheduledJob {
+public class DockerContainerManager implements DockerContainerManagerInterface {
 
+    private final DockerContainerManagerRunningController dockerContainerManagerRunningController = new DockerContainerManagerRunningController(this);
     private DockerContainer container;
 
     /**
@@ -66,11 +66,15 @@ public class DockerContainerManager implements DockerContainerManagerInterface, 
 
     @Override
     public boolean startContainer() {
+        if (!getContainer().getContainerInfo().isCreated())
+            createContainer();
+
         try {
             dockerClient.startContainer(getContainer().getId());
             container.getContainerInfo().setStarted(true);
             container.getContainerInfo().setStartTime(Instant.now());
-
+            shortTimeScheduler.addJob(dockerContainerManagerRunningController);
+            getContainer().getEvents().started();
             return true;
         } catch (DockerException e) {
             e.printStackTrace();
@@ -86,6 +90,7 @@ public class DockerContainerManager implements DockerContainerManagerInterface, 
         container.unuseNetwork();
         try {
             dockerClient.killContainer(getContainer().getId());
+            getContainer().getEvents().terminated();
             return true;
         } catch (DockerException e) {
             e.printStackTrace();
@@ -101,6 +106,7 @@ public class DockerContainerManager implements DockerContainerManagerInterface, 
         container.unuseNetwork();
         try {
             dockerClient.removeContainer(getContainer().getId(), DockerClient.RemoveContainerParam.forceKill());
+            getContainer().getEvents().removed();
         } catch (DockerException e) {
             e.printStackTrace();
             exceptionLogger.log(e);
@@ -115,22 +121,27 @@ public class DockerContainerManager implements DockerContainerManagerInterface, 
 
         ContainerConfig.Builder builder = ContainerConfig.builder();
 
-        builder = builder.env(dockerContainerConfig.getEnvironmentVariables());
+        ArrayList<String> env = new ArrayList<>();
+        env.addAll(dockerContainerConfig.getEnvironmentVariables());
+        env.addAll(getContainer().getEnvironmentVariables());
+
+        builder = builder.env(env);
 
         if (getContainer().getName() != null)
             builder.hostname(getContainer().getName());
 
+
         builder = builder.hostConfig(getHostConfig()).image(getContainer().getDockerContainerConfig().getImage());
 
-        builder.labels(getContainer().getLabels());
+        builder = builder.labels(getContainer().getLabels());
 
         ContainerConfig containerConfig = builder.build();
 
         try {
-            ContainerCreation container = dockerClient.createContainer(containerConfig);
+            ContainerCreation container = dockerClient.createContainer(containerConfig, getContainer().getName());
             getContainer().setId(container.id());
             getContainer().getContainerInfo().setCreated(true);
-
+            getContainer().getEvents().created();
             return true;
         } catch (DockerException e) {
             e.printStackTrace();
@@ -166,13 +177,18 @@ public class DockerContainerManager implements DockerContainerManagerInterface, 
         try {
             ContainerInfo containerInfo = dockerClient.inspectContainer(getContainer().getId());
 
-            if (containerInfo.state().status().equals("exited")) {
+
+            if (Objects.equals(containerInfo.state().status(), "exited")) {
                 container.getContainerInfo().setExited(true);
                 container.getContainerInfo().setExitCode(containerInfo.state().exitCode());
                 container.getContainerInfo().setExitTime(Instant.now());
+                getContainer().getEvents().exited();
             }
+
+            getContainer().getEvents().refreshed();
         } catch (DockerException e) {
             e.printStackTrace();
+            LoggerFactory.getLogger(this.getClass().getName()).error("EEE", e);
             exceptionLogger.log(e);
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -181,40 +197,7 @@ public class DockerContainerManager implements DockerContainerManagerInterface, 
 
     @PostConstruct
     private void init() {
-        shortTimeScheduler.addJob(this);
+
     }
 
-    @Override
-    public boolean isReady() {
-        return isTimedout();
-    }
-
-    @Override
-    public boolean runJob() {
-        terminateIfTimedout();
-        return true;
-    }
-
-    /**
-     * Check if container is timed out.
-     *
-     * @return true if it is timed out.
-     */
-    private boolean isTimedout() {
-        return getContainer().getContainerInfo().getStartTime()
-                .plus(getContainer().getDockerContainerConfig().getResourceLimits().getTimeout(), ChronoUnit.MILLIS)
-                .isBefore(Instant.now());
-    }
-
-
-    /**
-     * Terminates container if it is not exited normally.
-     */
-    private void terminateIfTimedout() {
-        refreshInformation();
-        if (!getContainer().getContainerInfo().isExited()) {
-            terminateContainer();
-            refreshInformation();
-        }
-    }
 }

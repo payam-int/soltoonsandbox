@@ -2,16 +2,18 @@ docker:
   uri: "unix:///var/run/docker.sock"
   defaultLabel: soltoonsandbox
   prefix: soltoonsandbox
+  build-images: true
+  images-directory: "/home/payam/IdeaProjects/soltoonsandbox/docker/images"
   containers:
     - container:
       name: "compiler-jdk9"
       image: "compiler-jdk9:latest"
-      environmentVariables:
+      environment-variables:
         - nothing
       resourceLimits:
         cpu: 1000 #100000 per cpu
         memory: 1000 #kb
-        memorySwap: 1000 #kb
+        swap-memory: 1000 #kb
         timeout: 100 #miliseconds
 
     - container:
@@ -22,6 +24,14 @@ docker:
         memory: 100000000 #kb
         swap-memory: 100000000 #kb
         timeout: 1000 #miliseconds
+    - container:
+      name: "test-connection"
+      image: "test-connection:latest"
+      resourceLimits:
+        cpu: 1000 #100000 per cpu
+        memory: 100000000 #kb
+        swap-memory: 100000000 #kb
+        timeout: 100000000 #miliseconds
   resources:
     cpu: 100000
     memory: 100000

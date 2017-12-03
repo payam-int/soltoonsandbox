@@ -22,7 +22,7 @@ public class DefaultLongTimeScheduler extends Scheduler implements LongTimeSched
     });
 
     public DefaultLongTimeScheduler() {
-        super("LongTimeScheduler", TimeUnit.HOURS.toMillis(1));
+        super("LongTimeScheduler", TimeUnit.MINUTES.toMillis(15));
     }
 
     public DefaultLongTimeScheduler(String name, long sleepTime, TimeUnit timeUnit) {

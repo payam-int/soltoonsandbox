@@ -9,9 +9,16 @@ import ir.pint.soltoon.services.docker.container.DockerContainerGroup;
  */
 public interface DockerManager {
     DockerContainer getContainer(String tag);
+
     DockerContainerGroup groupContainers(DockerContainer... containers);
 
     void linkContainers(DockerContainerGroup containerGroup);
+
+    void crossLinkContainers(DockerContainer container, DockerContainerGroup containerGroup, String variable);
+
+    default void assignContainers(DockerContainerGroup containerGroup){
+
+    }
 
     boolean runContainerGroup(DockerContainerGroup containerGroup);
 

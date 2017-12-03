@@ -4,6 +4,7 @@ import ir.pint.soltoon.services.docker.DockerNamingService;
 import ir.pint.soltoon.services.docker.DockerStorage;
 import ir.pint.soltoon.services.docker.api.DockerContainerManagerInterface;
 import ir.pint.soltoon.services.docker.api.DockerContainerManager;
+import ir.pint.soltoon.services.docker.events.DockerEventListener;
 import ir.pint.soltoon.services.docker.network.DockerContainerNetwork;
 import ir.pint.soltoon.services.docker.network.DockerContainerNoneNetwork;
 import ir.pint.soltoon.services.scheduler.DefaultLongTimeScheduler;
@@ -27,10 +28,10 @@ public class DockerContainer implements DockerContainerGroup, TimeManagedObject 
     private DockerContainerInfo containerInfo;
     private DockerContainerConfig dockerContainerConfig;
     private DockerContainerNetwork dockerContainerNetwork = new DockerContainerNoneNetwork();
+    private DockerEvents events = new DockerEvents();
 
     private DockerStorage[] storages;
-    private String[] network;
-    private ArrayList<String> environmentVariables;
+    private ArrayList<String> environmentVariables = new ArrayList<>();
 
 
     private Instant objectDie = Instant.now().plus(DefaultLongTimeScheduler.defaultLifetime);
@@ -98,18 +99,6 @@ public class DockerContainer implements DockerContainerGroup, TimeManagedObject 
         this.storages = storages;
     }
 
-    public String[] getNetwork() {
-        return network;
-    }
-
-    public void setNetwork(String[] network) {
-        this.network = network;
-    }
-
-    public void setNetwork(String network) {
-        this.network = new String[]{network};
-    }
-
     public String getName() {
         return this.name == null ? getId() : name;
     }
@@ -151,7 +140,7 @@ public class DockerContainer implements DockerContainerGroup, TimeManagedObject 
     }
 
     public void addEnvironmentVariable(String name, String variable) {
-        this.environmentVariables.add(String.format("%s:%s", name, variable));
+        this.environmentVariables.add(String.format("%s=%s", name, variable));
     }
 
 
@@ -162,7 +151,7 @@ public class DockerContainer implements DockerContainerGroup, TimeManagedObject 
 
     @Override
     public boolean isDead() {
-        return false;
+        return objectDie.isBefore(Instant.now());
     }
 
     @Override
@@ -190,5 +179,13 @@ public class DockerContainer implements DockerContainerGroup, TimeManagedObject 
             dockerContainerNetwork.unuse();
             dockerContainerNetwork = null;
         }
+    }
+
+    public void addEventListener(DockerEventListener l) {
+        events.add(l);
+    }
+
+    public DockerEvents getEvents() {
+        return events;
     }
 }
