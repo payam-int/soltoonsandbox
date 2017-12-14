@@ -2,7 +2,7 @@ package ir.pint.soltoon.services.scheduler;
 
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-public interface TimeManagedObject extends SortableScheduledJob {
+public interface ScheduledObject extends SortableScheduledJob {
 
     void watch();
 

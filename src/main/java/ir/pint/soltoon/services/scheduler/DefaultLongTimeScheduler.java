@@ -11,9 +11,12 @@ import java.util.SortedSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 
+// @todo rewrite this shit
+
 @Service
 public class DefaultLongTimeScheduler extends Scheduler implements LongTimeScheduler {
     public static TemporalAmount defaultLifetime = Duration.ofDays(1);
+    
     private SortedSet<SortableScheduledJob> sortedScheduledJobs = new ConcurrentSkipListSet<>(new Comparator<SortableScheduledJob>() {
         @Override
         public int compare(SortableScheduledJob o1, SortableScheduledJob o2) {

@@ -10,7 +10,7 @@ import ir.pint.soltoon.services.docker.DockerNamingService;
 import ir.pint.soltoon.services.logger.ExternalExceptionLogger;
 import ir.pint.soltoon.services.scheduler.DefaultLongTimeScheduler;
 import ir.pint.soltoon.services.scheduler.LongTimeScheduler;
-import ir.pint.soltoon.services.scheduler.TimeManagedObject;
+import ir.pint.soltoon.services.scheduler.ScheduledObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Primary;
@@ -24,7 +24,7 @@ import java.util.Map;
 @Component
 @Scope("prototype")
 @Primary
-public class DockerContainerSandboxNetwork implements TimeManagedObject, DockerContainerNetwork {
+public class DockerContainerSandboxNetwork implements ScheduledObject, DockerContainerNetwork {
     private String name;
     private int usages = -1;
     private DockerClient dockerClient;

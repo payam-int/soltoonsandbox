@@ -7,18 +7,18 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class DefaultShortTimeScheduler extends Scheduler implements ShortTimeScheduler {
+public class ContainerScheduler extends Scheduler implements ShortTimeScheduler {
     private ConcurrentLinkedDeque<ScheduledJob> scheduledJobs = new ConcurrentLinkedDeque<>();
 
-    public DefaultShortTimeScheduler() {
+    public ContainerScheduler() {
         super("ShortTimeScheduler", TimeUnit.SECONDS.toMillis(1));
     }
 
-    public DefaultShortTimeScheduler(String name, long sleepTime) {
+    public ContainerScheduler(String name, long sleepTime) {
         super(name, sleepTime);
     }
 
-    public DefaultShortTimeScheduler(String name) {
+    public ContainerScheduler(String name) {
         super(name, TimeUnit.SECONDS.toMillis(1));
     }
 

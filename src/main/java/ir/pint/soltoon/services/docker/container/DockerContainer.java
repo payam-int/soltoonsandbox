@@ -9,7 +9,7 @@ import ir.pint.soltoon.services.docker.network.DockerContainerNetwork;
 import ir.pint.soltoon.services.docker.network.DockerContainerNoneNetwork;
 import ir.pint.soltoon.services.scheduler.DefaultLongTimeScheduler;
 import ir.pint.soltoon.services.scheduler.LongTimeScheduler;
-import ir.pint.soltoon.services.scheduler.TimeManagedObject;
+import ir.pint.soltoon.services.scheduler.ScheduledObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
@@ -23,7 +23,7 @@ import java.util.Map;
 
 @Component
 @Scope("prototype")
-public class DockerContainer implements DockerContainerGroup, TimeManagedObject {
+public class DockerContainer implements DockerContainerGroup, ScheduledObject {
     private DockerContainerManagerInterface containerApi;
     private DockerContainerInfo containerInfo;
     private DockerContainerConfig dockerContainerConfig;

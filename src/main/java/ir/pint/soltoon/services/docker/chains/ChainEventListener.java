@@ -1,15 +1,11 @@
 package ir.pint.soltoon.services.docker.chains;
 
-import ir.pint.soltoon.services.docker.container.DockerContainer;
-import ir.pint.soltoon.services.docker.container.DockerContainerGroup;
 import ir.pint.soltoon.services.docker.events.DockerEventListener;
 
-public class SimpleChainEventListener implements DockerEventListener {
-    private DockerContainer nextContainer;
-
+public class ChainEventListener implements DockerEventListener {
     @Override
     public void onExit() {
-        nextContainer.getContainerApi().startContainer();
+
     }
 
     @Override

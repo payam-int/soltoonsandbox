@@ -15,7 +15,6 @@ docker:
         memory: 1000 #kb
         swap-memory: 1000 #kb
         timeout: 100 #miliseconds
-
     - container:
       name: "test-longruntime"
       image: "test-longruntime:latest"
@@ -38,7 +37,7 @@ docker:
     containers: 10
     networks: 5
     container-lifetime: 86400 # seconds
-
-
+localstorage:
+  base-directory: "~/.soltoon/storage"
 bugsnag:
   apiKey: "211d3337ac1232df46778db557537339"
