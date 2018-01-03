@@ -6,8 +6,4 @@ public interface StorageEntity {
     String getName();
 
     String getId();
-
-    FileType getFileType();
-
-    InputStream getInputStream();
 }

@@ -5,12 +5,12 @@ import ir.pint.soltoon.services.scheduler.ScheduledJob;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-public class DockerContainerManagerRunningController implements ScheduledJob {
+public class DockerRunningManager implements ScheduledJob {
     private final DockerContainerManager dockerContainerManager;
     private long lastUpdate = 0;
 
 
-    public DockerContainerManagerRunningController(DockerContainerManager dockerContainerManager) {
+    public DockerRunningManager(DockerContainerManager dockerContainerManager) {
         this.dockerContainerManager = dockerContainerManager;
     }
 

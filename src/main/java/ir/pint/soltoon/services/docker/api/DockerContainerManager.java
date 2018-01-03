@@ -16,7 +16,6 @@ import javax.annotation.PostConstruct;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Objects;
-import java.util.logging.Logger;
 
 
 /**
@@ -27,7 +26,7 @@ import java.util.logging.Logger;
 @Scope("prototype")
 public class DockerContainerManager implements DockerContainerManagerInterface {
 
-    private final DockerContainerManagerRunningController dockerContainerManagerRunningController = new DockerContainerManagerRunningController(this);
+    private final DockerRunningManager dockerContainerManagerRunningController = new DockerRunningManager(this);
     private DockerContainer container;
 
     /**
